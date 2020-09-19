@@ -36,12 +36,29 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     select:{
       width: 160
-  }
+    },
+    spacingTop3:{
+      margin: theme.spacing(3,0,0,0)
+    } 
   }),
 );
 
+
+
 const ClienteModal = (props:any) => {
   const classes = useStyles();
+
+  interface IErro{
+    mensagem: string;
+    erro: boolean
+  }
+
+interface IErroCliente{
+  NomeValido?: IErro,
+  Celular1Valido?: IErro,
+  EmailValido?: IErro,
+  CpfValido?: IErro
+}
 
   const [nome,setNome] = useState("");
   const [email,setEmail] = useState("");
@@ -51,15 +68,12 @@ const ClienteModal = (props:any) => {
   const [numCpf,setNumCpf] = useState("");
   const [sexo,setSexo] = useState("");
   const [dataNasc,setDataNasc] = useState("");
-  const [erros, setErros] = React.useState<string[]>([]);
+  const [erros,setErros] = useState<IErroCliente>();
 
-
-  const submit = (event:any) => {
-    event.preventDefault();
-    props.mostrarOcultarModal(false)
-
-    
-
+  const submit = () => {
+    //e.preventDefault();
+       
+    debugger
     var cliente: ICliente = {
         Nome: nome,
         Email: email,
@@ -71,28 +85,8 @@ const ClienteModal = (props:any) => {
         DataNasc: dataNasc
     }
 
-    ValidarCampos(cliente);
-    setErros(erros.concat("Por favor preencha nome válido"))
-    console.log(erros);
-
-    console.log(cliente)
-
     LimparCampos();
-  }
-
-  const ValidarCampos = (props:ICliente) =>{
-
-    if(nome.length < 3){
-      setErros([...erros, "Por favor preencha nome válido"])
-    }
-    setErros([...erros, "Por favor preencha nome válido"])
-    const regexp = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
-    if(regexp.test(email)){
-      setErros([...erros, "Por favor preencha email válido"])
-    }
-    
-
-    
+    props.mostrarOcultarModal(false) 
   }
 
   const Fechar = () => {
@@ -106,7 +100,11 @@ const ClienteModal = (props:any) => {
     setNumCelular1("");
     setNumCelular2("");
     setNumCpf("");
-    setSexo("");    
+    setSexo(""); 
+    setErros({Celular1Valido:{mensagem:"",erro:false},
+              EmailValido:{mensagem:"",erro:false},
+              NomeValido:{mensagem:"",erro:false},
+              CpfValido:{mensagem:"",erro:false}})   
   }
 
   const handleNumCelular1 = (props:any) => {
@@ -125,30 +123,99 @@ const ClienteModal = (props:any) => {
     setDataNasc(props);
   }
 
+  const formularioValido =()=>{
+    let retorno: Boolean = true;
+    
+    if(ValidarNome()){
+      //mensagem Alert
+      retorno = false
+    }
+
+    if(ValidarCelular()){
+      //mensagem Alert
+      retorno = false
+    }
+
+    if(email !== '')
+      if(ValidarEmail())
+      {
+        //mensagem Alert
+        retorno = false
+      }
+
+
+      return retorno;
+  }
+
+  const ValidarNome = (): boolean =>{
+    let retorno: boolean = false;
+
+    if(nome.length < 3){
+      retorno = true;
+    }
+
+    return retorno;
+  }
+  
+  const ValidarCelular = (): boolean =>{
+    let retorno: boolean = false;
+
+    if(numCelular1.length < 11){
+      retorno = true;
+    }
+
+    return retorno;
+  }
+
+  const ValidarEmail = (): boolean => {
+    let retorno: boolean = false;
+    
+    if(email !== '') {
+      const regexp = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+      if(!regexp.test(email)){
+        retorno = true
+      }
+    }
+    return retorno
+  }
+
+  const RetornoValidacaoCpf = (props:IErro) => {
+    if(props.erro === true){
+      setErros({...erros,CpfValido:{mensagem:props.mensagem,erro:props.erro}})
+      //mensagem Alert
+    }
+    
+  }
+
   return (
     <div>
       <Dialog open={props.openDilog} onClick={event => ("")}  aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Cadastrar Cliente</DialogTitle>
         <DialogContent>
-          <form autoComplete="off" >
+          <form autoComplete="off">
             <Box width="100%"  className={classes.root}>
               <Box>
                 <TextField 
-                  id="IdNome"              
                   label="Nome" 
                   variant="outlined" 
                   size="small"
                   type="text"
-                  value={nome}
-                  inputProps={{ maxLength: 150 }}
+                  value={nome}                  
                   onChange={e=>setNome(e.target.value)}
+                  inputProps={{ maxLength: 150 }}
+                  onBlur={(e) => {
+                      const ehValido = ValidarNome()
+                     setErros({...erros,NomeValido:{erro:ehValido,mensagem:"Por favor informe um nome."}}) }}
+                  error={erros?.NomeValido?.erro ?? false}
                   required
                   fullWidth
-                  autoFocus/>
+                  autoFocus                  
+                  />                                   
               </Box>
               <Box>
                 <TextField
-                  id="IdEmail"
+                  id="Email"
+                  name="Email"
                   label="Email"
                   type="email"
                   variant="outlined"
@@ -156,9 +223,13 @@ const ClienteModal = (props:any) => {
                   inputProps={{ maxLength: 150 }}
                   value={email}
                   onChange={e=>setEmail(e.target.value)}
+                  onBlur={(e) => {
+                    const ehValido = ValidarEmail()
+                   setErros({...erros,EmailValido:{erro:ehValido,mensagem:"Por favor informe um e-mail valido."}}) }}
+                   error={erros?.EmailValido?.erro ?? false}
                   required
-                  fullWidth
-                />
+                  fullWidth          
+                 />                
               </Box>
               
               <Box display='flex'>
@@ -167,8 +238,9 @@ const ClienteModal = (props:any) => {
                     valor={numTelefone}
                     label={"Telefone"}
                     type="text"
-                    required={true}
+                    required={false}
                     mask={MascaraTelefone}
+                    onBlurValid={() => ""}
                     GetValor={(e:any) => handleNumTelefone(e)}/>
                 </Box>
                 <Box className={classes.marginRight}>
@@ -177,6 +249,7 @@ const ClienteModal = (props:any) => {
                     label={"Celular"}
                     type="text"
                     required={true}
+                    onBlurValid={() => ""}
                     mask={MascaraCelular}
                     GetValor={(e:any) => handleNumCelular1(e)}/>
                 </Box>             
@@ -185,8 +258,9 @@ const ClienteModal = (props:any) => {
                     valor={numCelular2}
                     label={"Celular"}
                     type="text"
-                    required={true}
+                    required={false}
                     mask={MascaraCelular}
+                    onBlurValid={() => ""}
                     GetValor={(e:any) => handleNumCelular2(e)}/>
                 </Box>              
               </Box>
@@ -199,6 +273,7 @@ const ClienteModal = (props:any) => {
                     type="text"
                     required={false}
                     mask={MascaraCPF}
+                    onBlurValid={(e:any) => RetornoValidacaoCpf(e)}
                     GetValor={(e:any) => handleNumCpf(e)}/>
                 </Box>
                 <Box className={classes.marginRight} >
@@ -207,6 +282,7 @@ const ClienteModal = (props:any) => {
                     type="text"
                     required={false}
                     label={"Data Nascimento"}
+                    onBlurValid={() => ""}
                     mask={MascaraDataNasc}
                     GetValor={(e:any) => handleDataNasc(e)}/>
                 </Box>             
@@ -228,19 +304,19 @@ const ClienteModal = (props:any) => {
               </Box>
               
             </Box>
-            
 
+            <Box display="flex" justifyContent="flex-end" className={classes.spacingTop3}>
+              <Box className={classes.marginRight}>
+                <Button onClick={Fechar}>Fechar</Button>
+              </Box>              
+              <Box>
+                <Button variant="contained" onClick={() => formularioValido() === true ? submit() : () => false} color="primary" >Salvar</Button>
+              </Box>
+              
+            </Box>
           </form>
          
         </DialogContent>
-        <DialogActions>
-          <Button onClick={Fechar}>
-            Fechar
-          </Button>
-          <Button onClick={submit} variant="contained" color="primary" href="#contained-buttons">
-            Salvar
-          </Button>
-        </DialogActions>
       </Dialog>
     </div>
   );
