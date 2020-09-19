@@ -136,13 +136,18 @@ interface IErroCliente{
       retorno = false
     }
 
-    if(email !== '')
+    if(email !== ''){
       if(ValidarEmail())
       {
         //mensagem Alert
         retorno = false
       }
+    }
 
+    if(erros?.CpfValido?.erro){
+      ////mensagem Alert
+      retorno = false
+    }
 
       return retorno;
   }
