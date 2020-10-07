@@ -153,9 +153,13 @@ interface IErroCliente{
     }
 
     setErros({...erros,...listErro})
-    setOpenMensagem(true);
-    setTipoMensagem("error");
-    setMensagem("Por Favor, preencha os campos obrigatórios.");
+
+    if(!retorno){
+      setOpenMensagem(true);
+      setTipoMensagem("error");
+      setMensagem("Por Favor, preencha os campos obrigatórios.");
+    }
+    
 
     return retorno;
   }
@@ -336,23 +340,24 @@ interface IErroCliente{
                       <MenuItem value={"Masculino"}>Masculino</MenuItem>                        
                       </Select>
                   </FormControl>
-              </Grid> 
+              </Grid>                      
+            </Grid>     
 
-              <Grid item alignItems="flex-start" >
-              <Button onClick={Fechar}>Fechar</Button>
-              <Button 
-                variant="contained" 
-                onClick={() => formularioValido() === true ? submit() : () => false} 
-                color="primary" >Salvar
-              </Button>
-              </Grid>             
+            <Grid container justify="flex-end" spacing={1} className={classes.spacingTop3}>
+              <Grid item md={2}>
+                <Button onClick={Fechar}>Fechar</Button>
+              </Grid>
+              <Grid item md={2}>
+                <Button 
+                  variant="contained" 
+                  onClick={() => formularioValido() === true ? submit() : () => false} 
+                  color="primary" >Salvar
+                </Button>
+              </Grid>    
+
             </Grid>
-            
-            <DialogActions>
-            
-              
-                         
-            </DialogActions>           
+                   
+                     
           </form>         
         </DialogContent>
       </Dialog>

@@ -19,16 +19,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 const Mensagens: React.FC<IMensagens> = (props) => {
   const classes = useStyles();
-  const [open, setOpen] = React.useState(props.open);
-
-  const handleClose = (event?: React.SyntheticEvent, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-
-    setOpen(false);
-  };
-
+ 
   return (
     <div className={classes.root}>
       <Snackbar 
@@ -36,7 +27,7 @@ const Mensagens: React.FC<IMensagens> = (props) => {
         autoHideDuration={props.tempo ?? 6000}
         anchorOrigin={props.posicao ?? {vertical:"top", horizontal:"center"}}
         open={props.open ?? false}>
-        <Alert onClose={handleClose} variant="filled" severity={props.tipo ?? "info"}>
+        <Alert onClose={() => props.onClose()} variant="filled" severity={props.tipo ?? "info"}>
           {props.mensagem}
         </Alert>
       </Snackbar>      
