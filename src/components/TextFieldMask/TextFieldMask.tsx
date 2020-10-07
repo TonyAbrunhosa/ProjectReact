@@ -5,19 +5,22 @@ import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({   
   textField:{
-      width: 160
+      width: 180
   },  
 }));
 
 
 interface States{
+  id: string;
   valor: string;
   mask: any;
   label: string;
   type: string;
   required: boolean;
+  error?: boolean;
   onBlurValid: Function;
-  GetValor: Function
+  GetValor: Function;
+  helperText?: string;
 }
 
 const TextFieldMask: React.FC<States> = (props) => {
@@ -29,17 +32,29 @@ interface IErro{
 }
 
   const [values, setValues] = useState(props.valor);
-  const [erros,setErros] = useState<IErro>({mensagem:"",erro:false});
+  const [erros,setErros] = useState<IErro>({mensagem:"",erro:props.error ?? false});
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues(event.target.value)
-    props.GetValor(event.target.value.replace('(','').replace(')','').replace(' ','').replace(' ','').replace('-','').replace('.','').replace('.','').replace('/','').replace('/',''));
-  };
+    props.GetValor(RemoverCaractereEspecial(event.target.value));
+  }; 
+
+  const validarCelular = () =>{
+    let objErro = {mensagem:"",erro:false};
+
+    if((RemoverCaractereEspecial(values).length < 11) && (RemoverCaractereEspecial(values).length > 0))
+    {        
+      objErro = {mensagem:"Número incorreto.",erro:true};      
+    }
+
+    setErros({...objErro});
+    props.onBlurValid(objErro);
+  }
   
   const validarCpf =()=>{
     let objErro = {mensagem:"",erro:false};
 
-    if(values.length <= 0)
+    if(RemoverCaractereEspecial(values).length <= 0)
     {        
       setErros({...objErro})
       props.onBlurValid(objErro)
@@ -49,7 +64,7 @@ interface IErro{
     if(CpfValido()){
       setErros({mensagem:"",erro:false})
     }else{
-      objErro = {mensagem:"Por favor informe um CPF valido",erro:true};
+      objErro = {mensagem:"CPF incorreto.",erro:true};
       setErros({...objErro})
       props.onBlurValid(objErro)
     }      
@@ -100,6 +115,20 @@ interface IErro{
     return true;
   }
 
+  const RemoverCaractereEspecial = (props:any) => {
+    var valor:string = "";
+
+    valor = props.replaceAll('(','')
+    .replaceAll(')','')
+    .replaceAll(' ','')                      
+    .replaceAll('-','')
+    .replaceAll('.','')
+    .replaceAll('/','')
+    .replaceAll('_','');
+
+    return valor;
+  }
+
   return (
     <div>
       <FormControl>
@@ -112,17 +141,20 @@ interface IErro{
                   onChange={handleChange}
                   name="textmask"
                   id="inputCelular"
-                  error={erros.erro}
+                  error={props?.error ?? false}
                   onBlur={(e:any) =>  {
-                    if(props.label === 'CPF'){
+                    if(props.id === 'CPF'){
                       validarCpf()
                     }
+                    if(props.id === 'Celular1')
+                      validarCelular()
                   }}
                   required={props.required}
                   InputProps={{
                       inputComponent: props.mask as any
                     }}
-                  className={classes.textField}/>
+                  className={classes.textField}
+                  helperText={props?.helperText ?? ""}/>
       </FormControl>
     </div>
      

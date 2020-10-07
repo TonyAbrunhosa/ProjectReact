@@ -18,32 +18,26 @@ import Box from '@material-ui/core/Box';
 import MascaraCelular from '../../../../components/Mascaras/MascaraCelular';
 import MascaraTelefone from '../../../../components/Mascaras/MascaraTelefone';
 import MascaraCPF from '../../../../components/Mascaras/MascaraCPF';
-import MascaraDataNasc from '../../../../components/Mascaras/MascaraDataNasc';
 import ICliente from '../../Interfaces/ICliente'
+import Mensagens from '../../../../components/Mensagens';
+import IMensagens from '../../../../components/Mensagens/Interface/IMensagens';
+import { Grid } from '@material-ui/core';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       '& > *': {
-        margin: theme.spacing(1,0,0,0)
+        margin: theme.spacing(1)
       },
     },
-    marginRight:{
-      margin: theme.spacing(0,1,0,0)
-    },
-    marginLeft:{
-      margin: theme.spacing(0,0,0,1)
-    },
-    select:{
-      width: 160
+    campo:{
+      width: 180
     },
     spacingTop3:{
       margin: theme.spacing(3,0,0,0)
     } 
   }),
 );
-
-
 
 const ClienteModal = (props:any) => {
   const classes = useStyles();
@@ -67,8 +61,13 @@ interface IErroCliente{
   const [numTelefone,setNumTelefone] = useState("");
   const [numCpf,setNumCpf] = useState("");
   const [sexo,setSexo] = useState("");
-  const [dataNasc,setDataNasc] = useState("");
+  const [dataNasc,setDataNasc] = useState<Date>();
   const [erros,setErros] = useState<IErroCliente>();
+
+  //State Mensagem
+  const [openMensagem, setOpenMensagem] = useState<boolean>(false);
+  const [tipoMensagem, setTipoMensagem] = useState<'success' | 'info' | 'warning' | 'error'>("info");
+  const [mensagem, setMensagem] = useState<string>("");
 
   const submit = () => {
     //e.preventDefault();
@@ -125,21 +124,25 @@ interface IErroCliente{
 
   const formularioValido =()=>{
     let retorno: Boolean = true;
-    
+
+    var listErro:IErroCliente = {};
+
     if(ValidarNome()){
-      //mensagem Alert
+      if((erros?.NomeValido?.erro ?? false) === false)
+        listErro = {...listErro, NomeValido:{erro:true,mensagem:"Campo Obriatório!"}}
       retorno = false
     }
 
     if(ValidarCelular()){
-      //mensagem Alert
+      if((erros?.Celular1Valido?.erro ?? false) === false)
+        listErro = {...listErro,Celular1Valido:{erro:true,mensagem:"Campo Obriatório!"}}
       retorno = false
     }
 
     if(email !== ''){
       if(ValidarEmail())
       {
-        //mensagem Alert
+        listErro = {...listErro,Celular1Valido:{erro:true,mensagem:"."}}
         retorno = false
       }
     }
@@ -149,7 +152,12 @@ interface IErroCliente{
       retorno = false
     }
 
-      return retorno;
+    setErros({...erros,...listErro})
+    setOpenMensagem(true);
+    setTipoMensagem("error");
+    setMensagem("Por Favor, preencha os campos obrigatórios.");
+
+    return retorno;
   }
 
   const ValidarNome = (): boolean =>{
@@ -158,14 +166,13 @@ interface IErroCliente{
     if(nome.length < 3){
       retorno = true;
     }
-
     return retorno;
   }
   
   const ValidarCelular = (): boolean =>{
     let retorno: boolean = false;
 
-    if(numCelular1.length < 11){
+    if(numCelular1.length < 11){      
       retorno = true;
     }
 
@@ -185,39 +192,51 @@ interface IErroCliente{
   }
 
   const RetornoValidacaoCpf = (props:IErro) => {
-    if(props.erro === true){
-      setErros({...erros,CpfValido:{mensagem:props.mensagem,erro:props.erro}})
-      //mensagem Alert
-    }
-    
+    setErros({...erros,CpfValido:{...props}});      
+  }
+
+  const RetornoValidacaoCelular = (props:IErro) => {
+    setErros({...erros,Celular1Valido:{...props}});
   }
 
   return (
     <div>
+      <Mensagens 
+       open={openMensagem}
+       onClose={() => setOpenMensagem(false)}
+       mensagem={mensagem}
+       tipo={tipoMensagem}       
+      />
+
       <Dialog open={props.openDilog} onClick={event => ("")}  aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Cadastrar Cliente</DialogTitle>
         <DialogContent>
           <form autoComplete="off">
-            <Box width="100%"  className={classes.root}>
-              <Box>
-                <TextField 
-                  label="Nome" 
-                  variant="outlined" 
-                  size="small"
-                  type="text"
-                  value={nome}                  
-                  onChange={e=>setNome(e.target.value)}
-                  inputProps={{ maxLength: 150 }}
-                  onBlur={(e) => {
-                      const ehValido = ValidarNome()
-                     setErros({...erros,NomeValido:{erro:ehValido,mensagem:"Por favor informe um nome."}}) }}
-                  error={erros?.NomeValido?.erro ?? false}
-                  required
-                  fullWidth
-                  autoFocus                  
-                  />                                   
-              </Box>
-              <Box>
+            <Grid container spacing={1}>
+              <Grid item md={12}>                
+                  <TextField 
+                    label="Nome" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={nome}                  
+                    onChange={e=>setNome(e.target.value)}
+                    inputProps={{ maxLength: 150 }}      
+                    onBlur={(e) => {
+                        if (e.target.value.length < 3 && e.target.value.length > 0)
+                          setErros({...erros,NomeValido:{erro:true,mensagem:"Informe um Nome!"}})
+                        else
+                          setErros({...erros,NomeValido:{erro:false,mensagem:""}})
+                      }            
+                    }                      
+                    error={erros?.NomeValido?.erro ?? false}
+                    helperText={erros?.NomeValido?.mensagem ?? ""}
+                    required
+                    fullWidth
+                    autoFocus                  
+                    />                                   
+              </Grid>
+              <Grid item md={12}> 
                 <TextField
                   id="Email"
                   name="Email"
@@ -229,98 +248,112 @@ interface IErroCliente{
                   value={email}
                   onChange={e=>setEmail(e.target.value)}
                   onBlur={(e) => {
-                    const ehValido = ValidarEmail()
-                   setErros({...erros,EmailValido:{erro:ehValido,mensagem:"Por favor informe um e-mail valido."}}) }}
-                   error={erros?.EmailValido?.erro ?? false}
-                  required
+                    if(ValidarEmail()) 
+                      setErros({...erros,EmailValido:{erro:true,mensagem:"Por favor informe um e-mail válido."}}) 
+                    else
+                      setErros({...erros,EmailValido:{erro:false,mensagem:""}}) 
+                  }}
+                  error={erros?.EmailValido?.erro ?? false}
+                  helperText={erros?.EmailValido?.mensagem ?? ""}
                   fullWidth          
                  />                
-              </Box>
-              
-              <Box display='flex'>
-                <Box className={classes.marginRight}>
-                  <TextFieldMask 
-                    valor={numTelefone}
-                    label={"Telefone"}
-                    type="text"
-                    required={false}
-                    mask={MascaraTelefone}
-                    onBlurValid={() => ""}
-                    GetValor={(e:any) => handleNumTelefone(e)}/>
-                </Box>
-                <Box className={classes.marginRight}>
-                  <TextFieldMask 
-                    valor={numCelular1}
-                    label={"Celular"}
-                    type="text"
-                    required={true}
-                    onBlurValid={() => ""}
-                    mask={MascaraCelular}
-                    GetValor={(e:any) => handleNumCelular1(e)}/>
-                </Box>             
-                <Box >
-                  <TextFieldMask 
-                    valor={numCelular2}
-                    label={"Celular"}
-                    type="text"
-                    required={false}
-                    mask={MascaraCelular}
-                    onBlurValid={() => ""}
-                    GetValor={(e:any) => handleNumCelular2(e)}/>
-                </Box>              
-              </Box>
+              </Grid>                      
 
-              <Box display='flex'>
-                <Box className={classes.marginRight} >
-                  <TextFieldMask 
-                    valor={numCpf}
-                    label={"CPF"}
-                    type="text"
-                    required={false}
-                    mask={MascaraCPF}
-                    onBlurValid={(e:any) => RetornoValidacaoCpf(e)}
-                    GetValor={(e:any) => handleNumCpf(e)}/>
-                </Box>
-                <Box className={classes.marginRight} >
-                  <TextFieldMask 
-                    valor={dataNasc}
-                    type="text"
-                    required={false}
-                    label={"Data Nascimento"}
-                    onBlurValid={() => ""}
-                    mask={MascaraDataNasc}
-                    GetValor={(e:any) => handleDataNasc(e)}/>
-                </Box>             
-                <Box >
-                <FormControl variant="outlined" size="small">
-                        <InputLabel id="demo-simple-select-outlined-label" >Sexo</InputLabel>
-                        <Select value={sexo}                             
-                            onChange={(e:any)=>setSexo(e.target.value)}
-                            className={classes.select}
-                            labelId="demo-simple-select-outlined-label"
-                            id="demo-simple-select-outlined"
-                            label="sexo"
-                        >
-                        <MenuItem value={"Feminino"}>Feminino</MenuItem>
-                        <MenuItem value={"Masculino"}>Masculino</MenuItem>                        
-                        </Select>
-                    </FormControl>
-                </Box>                
-              </Box>
-              
-            </Box>
+              <Grid item md={4}>
+                <TextFieldMask 
+                  id={"Telefone"}
+                  valor={numTelefone}
+                  label={"Telefone"}
+                  type="text"
+                  required={false}
+                  mask={MascaraTelefone}
+                  onBlurValid={() => ""}
+                  error={false}
+                  GetValor={(e:any) => handleNumTelefone(e)}/>
+              </Grid>
+              <Grid item md={4}>
+                <TextFieldMask 
+                  id={"Celular1"}
+                  valor={numCelular1}
+                  label={"Celular"}
+                  type="text"
+                  required={true}
+                  onBlurValid={(e:any) => RetornoValidacaoCelular(e)}
+                  mask={MascaraCelular}
+                  GetValor={(e:any) => handleNumCelular1(e)}
+                  helperText={erros?.Celular1Valido?.mensagem ?? ""}
+                  error={erros?.Celular1Valido?.erro}/>
+              </Grid>             
+              <Grid item md={4} >
+                <TextFieldMask 
+                  id={"Celular2"} 
+                  valor={numCelular2}
+                  label={"Celular"}
+                  type="text"
+                  required={false}
+                  mask={MascaraCelular}
+                  onBlurValid={() => ""}
+                  error={false}
+                  GetValor={(e:any) => handleNumCelular2(e)}/>
+              </Grid>              
 
-            <Box display="flex" justifyContent="flex-end" className={classes.spacingTop3}>
-              <Box className={classes.marginRight}>
-                <Button onClick={Fechar}>Fechar</Button>
-              </Box>              
-              <Box>
-                <Button variant="contained" onClick={() => formularioValido() === true ? submit() : () => false} color="primary" >Salvar</Button>
-              </Box>
+                        
+              <Grid item md={4} >                
+                <TextFieldMask 
+                  id={"CPF"}
+                  valor={numCpf}
+                  label={"CPF"}
+                  type="text"
+                  required={false}
+                  mask={MascaraCPF}
+                  onBlurValid={(e:any) => RetornoValidacaoCpf(e)}
+                  GetValor={(e:any) => handleNumCpf(e)}
+                  error={erros?.CpfValido?.erro}/>
+              </Grid>
+              <Grid item md={4} >
+              <TextField
+                  value={dataNasc}
+                  type="date"
+                  variant="outlined"
+                  size="small"
+                  label={"Data Nascimento"}
+                  className={classes.campo}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}/>
+              </Grid>             
+              <Grid item md={4}>
+              <FormControl variant="outlined" size="small">
+                      <InputLabel id="demo-simple-select-outlined-label" >Sexo</InputLabel>
+                      <Select value={sexo}                             
+                          onChange={(e:any)=>setSexo(e.target.value)}
+                          className={classes.campo}
+                          labelId="demo-simple-select-outlined-label"
+                          id="demo-simple-select-outlined"
+                          label="sexo"
+                      >
+                      <MenuItem value={"Feminino"}>Feminino</MenuItem>
+                      <MenuItem value={"Masculino"}>Masculino</MenuItem>                        
+                      </Select>
+                  </FormControl>
+              </Grid> 
+
+              <Grid item alignItems="flex-start" >
+              <Button onClick={Fechar}>Fechar</Button>
+              <Button 
+                variant="contained" 
+                onClick={() => formularioValido() === true ? submit() : () => false} 
+                color="primary" >Salvar
+              </Button>
+              </Grid>             
+            </Grid>
+            
+            <DialogActions>
+            
               
-            </Box>
-          </form>
-         
+                         
+            </DialogActions>           
+          </form>         
         </DialogContent>
       </Dialog>
     </div>

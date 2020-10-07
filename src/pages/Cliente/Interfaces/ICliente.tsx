@@ -6,5 +6,5 @@ export default interface ICliente {
     Celular2: string,
     Cpf: string,
     Sexo: string,
-    DataNasc: string
+    DataNasc?: Date
 }
