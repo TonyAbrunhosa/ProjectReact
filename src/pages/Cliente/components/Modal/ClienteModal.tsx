@@ -6,15 +6,13 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
-import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import { mostrarOcultarModal } from '../../../../store/Cliente/clienteReducer';
-import TextFieldMask from '../../../../components/TextFieldMask/TextFieldMask';
-import Box from '@material-ui/core/Box';
+import TextFieldMask from '../../../../components/TextFieldMask';
 import MascaraCelular from '../../../../components/Mascaras/MascaraCelular';
 import MascaraTelefone from '../../../../components/Mascaras/MascaraTelefone';
 import MascaraCPF from '../../../../components/Mascaras/MascaraCPF';
@@ -22,6 +20,8 @@ import ICliente from '../../Interfaces/ICliente'
 import Mensagens from '../../../../components/Mensagens';
 import IMensagens from '../../../../components/Mensagens/Interface/IMensagens';
 import { Grid } from '@material-ui/core';
+import { ValidEmail } from './ClienteModalValid';
+import IErroCliente, { IErro } from '../../Interfaces/IErroCliente';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -41,19 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const ClienteModal = (props:any) => {
   const classes = useStyles();
-
-  interface IErro{
-    mensagem: string;
-    erro: boolean
-  }
-
-interface IErroCliente{
-  NomeValido?: IErro,
-  Celular1Valido?: IErro,
-  EmailValido?: IErro,
-  CpfValido?: IErro
-}
-
+  //State Cliente
   const [nome,setNome] = useState("");
   const [email,setEmail] = useState("");
   const [numCelular1,setNumCelular1] = useState("");
@@ -61,13 +49,79 @@ interface IErroCliente{
   const [numTelefone,setNumTelefone] = useState("");
   const [numCpf,setNumCpf] = useState("");
   const [sexo,setSexo] = useState("");
-  const [dataNasc,setDataNasc] = useState<Date>();
+  const [dataNasc,setDataNasc] = useState<string>("");
   const [erros,setErros] = useState<IErroCliente>();
-
   //State Mensagem
   const [openMensagem, setOpenMensagem] = useState<boolean>(false);
   const [tipoMensagem, setTipoMensagem] = useState<'success' | 'info' | 'warning' | 'error'>("info");
-  const [mensagem, setMensagem] = useState<string>("");
+  const [mensagem, setMensagem] = useState<string>("");  
+
+  const handleNumCelular1 = (props:any) => {
+    setNumCelular1(props);
+  }
+  const handleNumCelular2 = (props:any) => {
+    setNumCelular2(props);
+  }
+  const handleNumTelefone = (props:any) => {
+    setNumTelefone(props);
+  }
+  const handleNumCpf = (props:any) => {
+    setNumCpf(props);
+  }
+  const handleDataNasc = (props:string) => {    
+    //let date_ob = new Date(props);
+    //let date = ("0" + date_ob.getUTCDate()).slice(-2);
+    //let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+    //let year = date_ob.getFullYear();
+    //let data = date + "/" + month + "/" + year;
+    //debugger
+    //if(data.length === 10)
+      setDataNasc(props);
+  }
+
+  const formularioValido =()=>{
+    let retorno: Boolean = true;
+
+    var listErro:IErroCliente = {};
+
+    if(nome.length < 3){
+      if((erros?.NomeValido?.erro ?? false) === false)
+        listErro = {...listErro, NomeValido:{erro:true,mensagem:"Campo Obriatório!"}}
+      retorno = false
+    }
+
+    if(numCelular1.length < 11){
+      if((erros?.Celular1Valido?.erro ?? false) === false)
+        listErro = {...listErro,Celular1Valido:{erro:true,mensagem:"Campo Obriatório!"}}
+      retorno = false
+    }
+
+    if(email !== ''){
+      retorno = ValidEmail(email);
+    }
+
+    if(erros?.CpfValido?.erro){
+      retorno = false
+    }
+
+    setErros({...erros,...listErro})
+
+    if(!retorno){
+      setOpenMensagem(true);
+      setTipoMensagem("error");
+      setMensagem("Por Favor, preencha os campos obrigatórios.");
+    }   
+
+    return retorno;
+  }
+  
+  const RetornoValidacaoCpf = (props:IErro) => {
+    setErros({...erros,CpfValido:{...props}});      
+  }
+
+  const RetornoValidacaoCelular = (props:IErro) => {
+    setErros({...erros,Celular1Valido:{...props}});
+  }
 
   const submit = () => {
     //e.preventDefault();
@@ -104,103 +158,6 @@ interface IErroCliente{
               EmailValido:{mensagem:"",erro:false},
               NomeValido:{mensagem:"",erro:false},
               CpfValido:{mensagem:"",erro:false}})   
-  }
-
-  const handleNumCelular1 = (props:any) => {
-    setNumCelular1(props);
-  }
-  const handleNumCelular2 = (props:any) => {
-    setNumCelular2(props);
-  }
-  const handleNumTelefone = (props:any) => {
-    setNumTelefone(props);
-  }
-  const handleNumCpf = (props:any) => {
-    setNumCpf(props);
-  }
-  const handleDataNasc = (props:any) => {
-    setDataNasc(props);
-  }
-
-  const formularioValido =()=>{
-    let retorno: Boolean = true;
-
-    var listErro:IErroCliente = {};
-
-    if(ValidarNome()){
-      if((erros?.NomeValido?.erro ?? false) === false)
-        listErro = {...listErro, NomeValido:{erro:true,mensagem:"Campo Obriatório!"}}
-      retorno = false
-    }
-
-    if(ValidarCelular()){
-      if((erros?.Celular1Valido?.erro ?? false) === false)
-        listErro = {...listErro,Celular1Valido:{erro:true,mensagem:"Campo Obriatório!"}}
-      retorno = false
-    }
-
-    if(email !== ''){
-      if(ValidarEmail())
-      {
-        listErro = {...listErro,Celular1Valido:{erro:true,mensagem:"."}}
-        retorno = false
-      }
-    }
-
-    if(erros?.CpfValido?.erro){
-      ////mensagem Alert
-      retorno = false
-    }
-
-    setErros({...erros,...listErro})
-
-    if(!retorno){
-      setOpenMensagem(true);
-      setTipoMensagem("error");
-      setMensagem("Por Favor, preencha os campos obrigatórios.");
-    }
-    
-
-    return retorno;
-  }
-
-  const ValidarNome = (): boolean =>{
-    let retorno: boolean = false;
-
-    if(nome.length < 3){
-      retorno = true;
-    }
-    return retorno;
-  }
-  
-  const ValidarCelular = (): boolean =>{
-    let retorno: boolean = false;
-
-    if(numCelular1.length < 11){      
-      retorno = true;
-    }
-
-    return retorno;
-  }
-
-  const ValidarEmail = (): boolean => {
-    let retorno: boolean = false;
-    
-    if(email !== '') {
-      const regexp = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
-      if(!regexp.test(email)){
-        retorno = true
-      }
-    }
-    return retorno
-  }
-
-  const RetornoValidacaoCpf = (props:IErro) => {
-    setErros({...erros,CpfValido:{...props}});      
-  }
-
-  const RetornoValidacaoCelular = (props:IErro) => {
-    setErros({...erros,Celular1Valido:{...props}});
   }
 
   return (
@@ -252,7 +209,7 @@ interface IErroCliente{
                   value={email}
                   onChange={e=>setEmail(e.target.value)}
                   onBlur={(e) => {
-                    if(ValidarEmail()) 
+                    if(ValidEmail(email)) 
                       setErros({...erros,EmailValido:{erro:true,mensagem:"Por favor informe um e-mail válido."}}) 
                     else
                       setErros({...erros,EmailValido:{erro:false,mensagem:""}}) 
@@ -299,8 +256,7 @@ interface IErroCliente{
                   onBlurValid={() => ""}
                   error={false}
                   GetValor={(e:any) => handleNumCelular2(e)}/>
-              </Grid>              
-
+              </Grid>
                         
               <Grid item md={4} >                
                 <TextFieldMask 
@@ -322,6 +278,7 @@ interface IErroCliente{
                   size="small"
                   label={"Data Nascimento"}
                   className={classes.campo}
+                  onChange={e=> handleDataNasc(e.target.value)}
                   InputLabelProps={{
                     shrink: true,
                   }}/>
@@ -353,11 +310,8 @@ interface IErroCliente{
                   onClick={() => formularioValido() === true ? submit() : () => false} 
                   color="primary" >Salvar
                 </Button>
-              </Grid>    
-
-            </Grid>
-                   
-                     
+              </Grid>
+            </Grid>  
           </form>         
         </DialogContent>
       </Dialog>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import TextField from '@material-ui/core/TextField';
 import FormControl from '@material-ui/core/FormControl';
 import { makeStyles } from '@material-ui/core/styles';
+import ITextFieldMask from './Interface/ITextFieldMask';
 
 const useStyles = makeStyles((theme) => ({   
   textField:{
@@ -9,21 +10,7 @@ const useStyles = makeStyles((theme) => ({
   },  
 }));
 
-
-interface States{
-  id: string;
-  valor: string;
-  mask: any;
-  label: string;
-  type: string;
-  required: boolean;
-  error?: boolean;
-  onBlurValid: Function;
-  GetValor: Function;
-  helperText?: string;
-}
-
-const TextFieldMask: React.FC<States> = (props) => {
+const TextFieldMask: React.FC<ITextFieldMask> = (props) => {
   const classes = useStyles();
 
 interface IErro{

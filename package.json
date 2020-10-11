@@ -19,6 +19,7 @@
     "@types/react-text-mask": "^5.4.6",
     "@types/redux-thunk": "^2.1.0",
     "@types/yup": "^0.29.7",
+    "axios": "^0.20.0",
     "material-ui-phone-number": "^2.2.6",
     "mui-phone-input": "^1.0.5",
     "node": "^14.10.1",
