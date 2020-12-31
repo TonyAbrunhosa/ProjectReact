@@ -22,6 +22,11 @@ import IMensagens from '../../../../components/Mensagens/Interface/IMensagens';
 import { Grid } from '@material-ui/core';
 import { ValidEmail } from './ClienteModalValid';
 import IErroCliente, { IErro } from '../../Interfaces/IErroCliente';
+import { ObterEndereco } from '../../../../Service/ViaCep/EnderecoService';
+import IEndereco from '../../../../Service/ViaCep/Interface/IEndereco';
+import MascaraCep from '../../../../components/Mascaras/MascaraCep';
+import { RemoverCaractereEspecial } from '../../../../components/TextFieldMask/TextFieldMaskValid';
+import Axios from 'axios';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -50,7 +55,14 @@ const ClienteModal = (props:any) => {
   const [numCpf,setNumCpf] = useState("");
   const [sexo,setSexo] = useState("");
   const [dataNasc,setDataNasc] = useState<string>("");
-  const [erros,setErros] = useState<IErroCliente>();
+  const [cep,setCep] = useState<string>("");
+  const [logradouro,setLogradouro] = useState<string>("");
+  const [numeroEnd,setNumeroEnd] = useState<string>("");
+  const [complemento,setComplemento] = useState<string>("");
+  const [localidade,setLocalidade] = useState<string>("");
+  const [bairro,setBairro] = useState<string>("");
+  const [uf,setUf] = useState<string>("");
+  const [erros,setErros] = useState<IErroCliente>();  
   //State Mensagem
   const [openMensagem, setOpenMensagem] = useState<boolean>(false);
   const [tipoMensagem, setTipoMensagem] = useState<'success' | 'info' | 'warning' | 'error'>("info");
@@ -67,6 +79,9 @@ const ClienteModal = (props:any) => {
   }
   const handleNumCpf = (props:any) => {
     setNumCpf(props);
+  }
+  const handlerCep = (props:any) => {
+    setCep(props);
   }
   const handleDataNasc = (props:string) => {    
     //let date_ob = new Date(props);
@@ -104,12 +119,16 @@ const ClienteModal = (props:any) => {
       retorno = false
     }
 
+    if(erros?.CepValido?.erro){
+      retorno = false
+    }
+
     setErros({...erros,...listErro})
 
     if(!retorno){
       setOpenMensagem(true);
       setTipoMensagem("error");
-      setMensagem("Por Favor, preencha os campos obrigatórios.");
+      setMensagem("Por Favor, preencha corretament os campos sinalizados.");
     }   
 
     return retorno;
@@ -123,9 +142,24 @@ const ClienteModal = (props:any) => {
     setErros({...erros,Celular1Valido:{...props}});
   }
 
+  const RetornoValidacaoCep = (props:IErro) => {
+    if((erros?.CepValido?.erro ?? false)=== false)
+      PreencherCamposEndereco();   
+    setErros({...erros,CepValido:{...props}});
+  }
+
+  async function PreencherCamposEndereco(){
+    let endereco:IEndereco = {...await ObterEndereco(RemoverCaractereEspecial(cep))};
+    LimparCamposEndereco();
+    setLogradouro(endereco.logradouro ?? "");
+    setBairro(endereco?.bairro ?? "");
+    setUf(endereco?.uf ?? "");
+    setLocalidade(endereco?.localidade ?? "");
+  }
+
   const submit = () => {
     //e.preventDefault();
-       
+
     debugger
     var cliente: ICliente = {
         Nome: nome,
@@ -153,11 +187,24 @@ const ClienteModal = (props:any) => {
     setNumCelular1("");
     setNumCelular2("");
     setNumCpf("");
-    setSexo(""); 
+    setSexo("");
+    setCep("");
+    LimparCamposEndereco();
     setErros({Celular1Valido:{mensagem:"",erro:false},
               EmailValido:{mensagem:"",erro:false},
               NomeValido:{mensagem:"",erro:false},
-              CpfValido:{mensagem:"",erro:false}})   
+              CpfValido:{mensagem:"",erro:false},
+              CepValido:{mensagem:"",erro:false}
+            })   
+  }
+
+  const LimparCamposEndereco =()=>{
+    setLogradouro("");
+    setLocalidade("");
+    setBairro("");
+    setNumeroEnd("");
+    setComplemento("");
+    setUf("");
   }
 
   return (
@@ -234,7 +281,7 @@ const ClienteModal = (props:any) => {
               </Grid>
               <Grid item md={4}>
                 <TextFieldMask 
-                  id={"Celular1"}
+                  id={"Celular"}
                   valor={numCelular1}
                   label={"Celular"}
                   type="text"
@@ -268,6 +315,7 @@ const ClienteModal = (props:any) => {
                   mask={MascaraCPF}
                   onBlurValid={(e:any) => RetornoValidacaoCpf(e)}
                   GetValor={(e:any) => handleNumCpf(e)}
+                  helperText={erros?.CpfValido?.mensagem ?? ""}
                   error={erros?.CpfValido?.erro}/>
               </Grid>
               <Grid item md={4} >
@@ -297,7 +345,89 @@ const ClienteModal = (props:any) => {
                       <MenuItem value={"Masculino"}>Masculino</MenuItem>                        
                       </Select>
                   </FormControl>
-              </Grid>                      
+              </Grid> 
+
+              <Grid item md={4} >                
+                <TextFieldMask 
+                  id={"Cep"}
+                  valor={cep}
+                  label={"Cep"}
+                  type="text"
+                  required={false}
+                  mask={MascaraCep}
+                  onBlurValid={(e:any) => RetornoValidacaoCep(e)}
+                  GetValor={(e:any) => handlerCep(e)}
+                  helperText={erros?.CepValido?.mensagem ?? ""}
+                  error={erros?.CepValido?.erro}/>
+              </Grid>
+              <Grid item md={8}>                
+                  <TextField 
+                    label="Logradouro" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={logradouro}                  
+                    disabled={true}     
+                    fullWidth           
+                    />                                   
+              </Grid>
+              <Grid item md={4}>                
+                  <TextField 
+                    label="Número" 
+                    variant="outlined" 
+                    size="small"
+                    type="number"
+                    value={numeroEnd}
+                    inputProps={{maxLength: 8}}
+                    onChange={e=>setNumeroEnd(e.target.value)}
+                    fullWidth           
+                    />                                   
+              </Grid>
+              <Grid item md={6}>                
+                  <TextField 
+                    label="Complemento" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={complemento}
+                    onChange={e=>setComplemento(e.target.value)}
+                    inputProps={{ maxLength: 30 }}
+                    fullWidth           
+                    />                                   
+              </Grid>
+              <Grid item md={2}>                
+                  <TextField 
+                    label="UF" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={uf}                  
+                    disabled={true}     
+                    fullWidth           
+                    />                                   
+              </Grid>
+              <Grid item md={6}>                
+                  <TextField 
+                    label="Bairro" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={bairro}                  
+                    disabled={true}     
+                    fullWidth           
+                    />                                   
+              </Grid>
+              <Grid item md={6}>                
+                  <TextField 
+                    label="Localidade" 
+                    variant="outlined" 
+                    size="small"
+                    type="text"
+                    value={localidade}                  
+                    disabled={true}     
+                    fullWidth           
+                    />                                   
+              </Grid>
             </Grid>     
 
             <Grid container justify="flex-end" spacing={1} className={classes.spacingTop3}>

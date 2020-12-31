@@ -3,6 +3,7 @@ export default interface IErroCliente{
     Celular1Valido?: IErro,
     EmailValido?: IErro,
     CpfValido?: IErro
+    CepValido?: IErro
   }
 
  export interface IErro{
